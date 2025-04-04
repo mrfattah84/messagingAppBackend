@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  uname     String   @unique
+  pw        String
+  img       String?
+  bio       String?
+  setting   Json
+  lastSeen  DateTime @default(now())
+
+  chats     ChatUser[]
+  messages  Message[]
+  reactions MessageReaction[]
+  seenMessages MessageSeen[]
+  notifications Notification[]
+}
+
+model Chat {
+  id      Int     @id @default(autoincrement())
+  isGroup Boolean @default(false)
+  name    String?  // For group chats
+  img     String?  // Group profile picture
+  users   ChatUser[]
+  messages Message[]
+}
+
+model ChatUser {
+  id      Int    @id @default(autoincrement())
+  chat    Chat   @relation(fields: [chatId], references: [id])
+  chatId  Int
+  user    User   @relation(fields: [userId], references: [id])
+  userId  Int
+  role    String @default("member") // "admin", "member"
+  joinedAt DateTime @default(now())
+
+  @@unique([chatId, userId])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  Int
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    Int
+  text      String
+  reply     Message? @relation("ReplyRelation", fields: [replyId], references: [id])
+  replyId   Int?
+  repliedBy Message[] @relation("ReplyRelation")  // This tracks messages that are replies to this message
+  timestamp DateTime @default(now())
+  attachment String[] @default([])
+  attachmentType String?
+  edited    Boolean  @default(false)
+  deleted   Boolean  @default(false)
+
+  reactions MessageReaction[]
+  seenBy    MessageSeen[]
+}
+
+
+model MessageReaction {
+  id        Int    @id @default(autoincrement())
+  message   Message @relation(fields: [messageId], references: [id])
+  messageId Int
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  emoji     String
+
+  @@unique([messageId, userId])
+}
+
+model MessageSeen {
+  id        Int    @id @default(autoincrement())
+  message   Message @relation(fields: [messageId], references: [id])
+  messageId Int
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  seenAt    DateTime @default(now())
+
+  @@unique([messageId, userId])
+}
+
+model Notification {
+  id        Int    @id @default(autoincrement())
+  user      User   @relation(fields: [userId], references: [id])
+  userId    Int
+  type      String
+  seen      Boolean @default(false)
+  createdAt DateTime @default(now())
+}
