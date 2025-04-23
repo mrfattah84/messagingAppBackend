@@ -46,7 +46,7 @@ passport.use(
           where: { id: payload.id },
         });
         if (user) {
-          return done(null, user);
+          return done(null, { ...user, pw: undefined });
         } else {
           return done(null, false);
         }
@@ -102,7 +102,7 @@ router.post('/signup', async (req, res) => {
         pw: hashedPassword,
       },
     });
-    res.status(201).json(user);
+    res.status(201).json({ ...user, pw: undefined });
   } catch (error) {
     res.status(400).json({ error: 'User already exists' });
   }

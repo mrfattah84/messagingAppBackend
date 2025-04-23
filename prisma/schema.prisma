@@ -16,13 +16,12 @@ model User {
   img       String?
   bio       String?
   setting   Json
-  lastSeen  DateTime @default(now())
-
+  lastSeen  DateTime? @default(now())
+  socketId String?
   chats     ChatUser[]
   messages  Message[]
   reactions MessageReaction[]
   seenMessages MessageSeen[]
-  notifications Notification[]
 }
 
 model Chat {
@@ -87,13 +86,4 @@ model MessageSeen {
   seenAt    DateTime @default(now())
 
   @@unique([messageId, userId])
-}
-
-model Notification {
-  id        Int    @id @default(autoincrement())
-  user      User   @relation(fields: [userId], references: [id])
-  userId    Int
-  type      String
-  seen      Boolean @default(false)
-  createdAt DateTime @default(now())
 }
