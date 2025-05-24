@@ -1,18 +1,17 @@
-const express = require('express');
-const passport = require('passport');
-const LocalStrategy = require('passport-local');
-const passportjwt = require('passport-jwt');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const prisma = require('../modules/prisma');
-const dotenv = require('dotenv');
-dotenv.config();
+const express = require("express");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const passportjwt = require("passport-jwt");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const prisma = require("../modules/prisma");
+
 
 const router = express.Router();
 
 passport.use(
   new LocalStrategy(
-    { usernameField: 'uname', passwordField: 'pw' },
+    { usernameField: "uname", passwordField: "pw" },
     async (username, password, done) => {
       try {
         const user = await prisma.user.findUnique({
@@ -20,11 +19,11 @@ passport.use(
         });
 
         if (!user) {
-          return done(null, false, { message: 'Incorrect username' });
+          return done(null, false, { message: "Incorrect username" });
         }
         const match = await bcrypt.compare(password, user.pw);
         if (!match) {
-          return done(null, false, { message: 'Incorrect password' });
+          return done(null, false, { message: "Incorrect password" });
         }
         return done(null, user);
       } catch (err) {
@@ -73,12 +72,12 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-router.post('/login', (req, res, next) => {
-  passport.authenticate('local', { session: false }, (err, user, info) => {
+router.post("/login", (req, res, next) => {
+  passport.authenticate("local", { session: false }, (err, user, info) => {
     if (err || !user) {
       return res.status(400).json({
-        message: 'Something is not right',
-        user: user,
+        message: "Something is not right",
+        user: { ...user, pw: undefined },
       });
     }
     req.login(user, { session: false }, (err) => {
@@ -87,12 +86,12 @@ router.post('/login', (req, res, next) => {
       }
       // generate a signed son web token with the contents of user object and return it in the response
       const token = jwt.sign(user, process.env.JWT_SECRET);
-      return res.json({ user, token });
+      return res.json({ user: { ...user, pw: undefined }, token });
     });
   })(req, res);
 });
 
-router.post('/signup', async (req, res) => {
+router.post("/signup", async (req, res) => {
   const { uname, pw } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(pw, 10);
@@ -100,11 +99,14 @@ router.post('/signup', async (req, res) => {
       data: {
         ...req.body,
         pw: hashedPassword,
+        setting: { darkMode: true },
+        lastSeen: new Date(),
       },
     });
     res.status(201).json({ ...user, pw: undefined });
   } catch (error) {
-    res.status(400).json({ error: 'User already exists' });
+    console.log(req.body);
+    res.status(400).json({ error: "User already exists" });
   }
 });
 
