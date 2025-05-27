@@ -105,7 +105,7 @@ router.post("/signup", async (req, res) => {
     });
     res.status(201).json({ ...user, pw: undefined });
   } catch (error) {
-    console.log(req.body);
+    console.log(error);
     res.status(400).json({ error: "User already exists" });
   }
 });
